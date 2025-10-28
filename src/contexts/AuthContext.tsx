@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = useCallback(async (data: SignupData) => {
     const response = await authApi.signup(data);
-    tokenStorage.setTokens(response.access_token, response.refresh_token);
+    tokenStorage.setTokens(response.session.access_token, response.session.refresh_token);
     setState({
       user: { id: response.user.id, email: response.user.email },
       profile: response.user.profile,
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (data: LoginData) => {
     const response = await authApi.login(data);
-    tokenStorage.setTokens(response.access_token, response.refresh_token);
+    tokenStorage.setTokens(response.session.access_token, response.session.refresh_token);
     setState({
       user: { id: response.user.id, email: response.user.email },
       profile: response.user.profile,
