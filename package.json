@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "start": "serve dist -l $PORT -c serve.json",
+    "build": "tsc -b && vite build && cp serve.json dist/serve.json",
+    "start": "serve dist -l $PORT",
     "lint": "eslint .",
     "preview": "vite preview"
   },
