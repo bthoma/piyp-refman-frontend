@@ -58,7 +58,7 @@ export const SignupForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-8 p-8 bg-white rounded-lg shadow-lg">
+    <div className="max-w-md mx-auto mt-8 p-8 bg-white rounded-lg shadow-lg">
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Sign Up</h2>
 
       {error && (
