@@ -68,6 +68,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (data: LoginData) => {
     const response = await authApi.login(data);
+
+    if (!response.session) {
+      throw new Error('Login failed: No session returned');
+    }
+
     tokenStorage.setTokens(response.session.access_token, response.session.refresh_token);
     setState({
       user: { id: response.user.id, email: response.user.email },
