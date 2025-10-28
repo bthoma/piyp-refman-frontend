@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: `${API_URL}/api/v1`,
+  baseURL: `${API_URL}/api/core`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -43,7 +43,7 @@ api.interceptors.response.use(
 
         // Attempt token refresh
         const response = await axios.post<AuthResponse>(
-          `${API_URL}/api/v1/auth/refresh`,
+          `${API_URL}/api/core/refresh`,
           { refresh_token: refreshToken }
         );
 
@@ -70,26 +70,26 @@ api.interceptors.response.use(
 // Auth API functions
 export const authApi = {
   signup: async (data: SignupData): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/signup', data);
+    const response = await api.post<AuthResponse>('/register', data);
     return response.data;
   },
 
   login: async (data: LoginData): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/login', data);
+    const response = await api.post<AuthResponse>('/login', data);
     return response.data;
   },
 
   logout: async (): Promise<void> => {
-    await api.post('/auth/logout');
+    await api.post('/logout');
   },
 
   getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/me');
     return response.data;
   },
 
   initiateGoogleAuth: (): void => {
-    window.location.href = `${API_URL}/api/v1/auth/google`;
+    window.location.href = `${API_URL}/api/core/google`;
   },
 
   updateProfile: async (updates: ProfileUpdate) => {
