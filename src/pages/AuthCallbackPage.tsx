@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '../utils/tokenStorage';
 
 export const AuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [error, setError] = useState('');
 
   useEffect(() => {
     const handleCallback = async () => {
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      const errorParam = searchParams.get('error');
+      // Parse tokens from URL hash (Supabase sends them after #, not ?)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const errorParam = hashParams.get('error');
 
       if (errorParam) {
         setError('Authentication failed: ' + errorParam);
@@ -29,7 +30,7 @@ export const AuthCallbackPage: React.FC = () => {
     };
 
     handleCallback();
-  }, [searchParams, navigate]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
