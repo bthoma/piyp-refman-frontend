@@ -9,6 +9,7 @@ export const SignupForm: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { signup, loginWithGoogle } = useAuth();
@@ -28,6 +29,7 @@ export const SignupForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     // Validation
     if (password !== confirmPassword) {
@@ -51,7 +53,12 @@ export const SignupForm: React.FC = () => {
       await signup({ email, password, full_name: fullName });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Signup failed. Please try again.');
+      // Check if this is a confirmation required error (success case)
+      if (err.type === 'confirmation_required') {
+        setSuccess(err.message);
+      } else {
+        setError(err.response?.data?.detail || 'Signup failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -64,6 +71,12 @@ export const SignupForm: React.FC = () => {
       {error && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          {success}
         </div>
       )}
 

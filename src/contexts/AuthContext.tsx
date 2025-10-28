@@ -49,6 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = useCallback(async (data: SignupData) => {
     const response = await authApi.signup(data);
+
+    // Check if email confirmation is required
+    if (response.confirmation_required || !response.session) {
+      const error: any = new Error(response.message || 'Please check your email to confirm your account.');
+      error.type = 'confirmation_required';
+      throw error;
+    }
+
     tokenStorage.setTokens(response.session.access_token, response.session.refresh_token);
     setState({
       user: { id: response.user.id, email: response.user.email },

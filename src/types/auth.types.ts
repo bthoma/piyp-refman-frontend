@@ -41,7 +41,9 @@ export interface AuthResponse {
     access_token: string;
     refresh_token: string;
     expires_in: number;
-  };
+  } | null;
+  confirmation_required?: boolean;
+  message?: string;
 }
 
 export interface SignupData {
