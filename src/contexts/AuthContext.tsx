@@ -82,8 +82,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const loginWithGoogle = useCallback(() => {
-    authApi.initiateGoogleAuth();
+  const loginWithGoogle = useCallback(async () => {
+    await authApi.initiateGoogleAuth();
   }, []);
 
   const logout = useCallback(async () => {

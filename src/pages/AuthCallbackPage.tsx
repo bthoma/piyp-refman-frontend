@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '../utils/tokenStorage';
+import { supabase } from '../utils/supabase';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -24,29 +25,34 @@ export const AuthCallbackPage: React.FC = () => {
         return;
       }
 
-      // Check for OAuth authorization code (authorization code flow)
+      // Check for OAuth authorization code (authorization code flow with PKCE)
       const code = searchParams.get('code');
 
       if (code) {
         try {
-          // Call backend to exchange code for tokens and create profile
-          const response = await axios.get(`${API_URL}/api/core/auth/callback`, {
-            params: { code }
+          // Use Supabase client to exchange code for session (handles PKCE automatically)
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+          if (exchangeError || !data.session) {
+            throw new Error(exchangeError?.message || 'Failed to exchange code for session');
+          }
+
+          const { access_token, refresh_token } = data.session;
+
+          // Call backend to create/update user profile
+          await axios.get(`${API_URL}/api/core/auth/callback`, {
+            params: {
+              access_token,
+              refresh_token
+            }
           });
 
-          // Extract tokens from response
-          const { session } = response.data;
-
-          if (session && session.access_token && session.refresh_token) {
-            tokenStorage.setTokens(session.access_token, session.refresh_token);
-            navigate('/dashboard');
-          } else {
-            setError('Invalid session data received from server');
-            setTimeout(() => navigate('/login'), 3000);
-          }
+          // Store tokens and navigate
+          tokenStorage.setTokens(access_token, refresh_token);
+          navigate('/dashboard');
         } catch (err: any) {
           console.error('OAuth code exchange error:', err);
-          setError(err.response?.data?.detail || 'Failed to complete authentication');
+          setError(err.response?.data?.detail || err.message || 'Failed to complete authentication');
           setTimeout(() => navigate('/login'), 3000);
         }
         return;

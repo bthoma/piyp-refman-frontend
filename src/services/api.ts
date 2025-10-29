@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 import { tokenStorage } from '../utils/tokenStorage';
+import { supabase } from '../utils/supabase';
 import type { AuthResponse, SignupData, LoginData, ProfileUpdate } from '../types/auth.types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -88,8 +89,18 @@ export const authApi = {
     return response.data;
   },
 
-  initiateGoogleAuth: (): void => {
-    window.location.href = `${API_URL}/api/core/google`;
+  initiateGoogleAuth: async (): Promise<void> => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+
+    if (error) {
+      console.error('Failed to initiate Google OAuth:', error);
+      throw error;
+    }
   },
 
   updateProfile: async (updates: ProfileUpdate) => {
