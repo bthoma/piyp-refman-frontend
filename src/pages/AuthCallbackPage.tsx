@@ -58,9 +58,20 @@ export const AuthCallbackPage: React.FC = () => {
           setTimeout(() => navigate('/login'), 3000);
         }
       } else {
-        console.error('Missing tokens - hashParams:', Array.from(hashParams.entries()), 'searchParams:', Array.from(searchParams.entries()));
-        setError('Missing authentication tokens');
-        setTimeout(() => navigate('/login'), 3000);
+        // Show what parameters we actually received
+        const hashEntries = Array.from(hashParams.entries());
+        const searchEntries = Array.from(searchParams.entries());
+        console.error('Missing tokens - hashParams:', hashEntries, 'searchParams:', searchEntries);
+
+        // Check if we got an OAuth code instead (authorization code flow)
+        const code = searchParams.get('code');
+        if (code) {
+          console.log('Received OAuth code:', code.substring(0, 20));
+          setError('OAuth code flow detected but not yet implemented. Code: ' + code.substring(0, 20));
+        } else {
+          setError('Missing authentication tokens. Received params: ' + JSON.stringify(Object.fromEntries(searchEntries)));
+        }
+        setTimeout(() => navigate('/login'), 5000);
       }
     };
 
