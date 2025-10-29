@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStorage } from '../utils/tokenStorage';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const AuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +16,7 @@ export const AuthCallbackPage: React.FC = () => {
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
       const errorParam = hashParams.get('error');
+      const type = hashParams.get('type');
 
       if (errorParam) {
         setError('Authentication failed: ' + errorParam);
@@ -21,8 +25,24 @@ export const AuthCallbackPage: React.FC = () => {
       }
 
       if (accessToken && refreshToken) {
-        tokenStorage.setTokens(accessToken, refreshToken);
-        navigate('/dashboard');
+        try {
+          // For OAuth (type="signup"), call backend to create/update profile
+          if (type === 'signup') {
+            await axios.get(`${API_URL}/api/core/auth/callback`, {
+              params: {
+                access_token: accessToken,
+                refresh_token: refreshToken
+              }
+            });
+          }
+
+          // Store tokens and navigate
+          tokenStorage.setTokens(accessToken, refreshToken);
+          navigate('/dashboard');
+        } catch (err: any) {
+          setError(err.response?.data?.detail || 'Failed to complete authentication');
+          setTimeout(() => navigate('/login'), 3000);
+        }
       } else {
         setError('Missing authentication tokens');
         setTimeout(() => navigate('/login'), 3000);
