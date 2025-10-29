@@ -11,24 +11,12 @@ export const AuthCallbackPage: React.FC = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Debug: Log the full URL
-      console.log('Full URL:', window.location.href);
-      console.log('Hash:', window.location.hash);
-      console.log('Search:', window.location.search);
-
-      // Parse tokens from URL hash (Supabase sends them after #, not ?)
+      const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
-      // Also check query params as fallback
-      const searchParams = new URLSearchParams(window.location.search);
-
-      const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+      // Check for errors
       const errorParam = hashParams.get('error') || searchParams.get('error');
       const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
-      const type = hashParams.get('type') || searchParams.get('type');
-
-      console.log('Parsed tokens:', { accessToken: accessToken?.substring(0, 20), refreshToken: refreshToken?.substring(0, 20), type });
 
       if (errorParam) {
         setError(`Authentication failed: ${errorParam}${errorDescription ? ' - ' + errorDescription : ''}`);
@@ -36,11 +24,43 @@ export const AuthCallbackPage: React.FC = () => {
         return;
       }
 
+      // Check for OAuth authorization code (authorization code flow)
+      const code = searchParams.get('code');
+
+      if (code) {
+        try {
+          // Call backend to exchange code for tokens and create profile
+          const response = await axios.get(`${API_URL}/api/core/auth/callback`, {
+            params: { code }
+          });
+
+          // Extract tokens from response
+          const { session } = response.data;
+
+          if (session && session.access_token && session.refresh_token) {
+            tokenStorage.setTokens(session.access_token, session.refresh_token);
+            navigate('/dashboard');
+          } else {
+            setError('Invalid session data received from server');
+            setTimeout(() => navigate('/login'), 3000);
+          }
+        } catch (err: any) {
+          console.error('OAuth code exchange error:', err);
+          setError(err.response?.data?.detail || 'Failed to complete authentication');
+          setTimeout(() => navigate('/login'), 3000);
+        }
+        return;
+      }
+
+      // Check for direct tokens (implicit flow or email confirmation)
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
       if (accessToken && refreshToken) {
         try {
-          // For OAuth (type="signup"), call backend to create/update profile
+          // For OAuth implicit flow, call backend to create/update profile
           if (type === 'signup') {
-            console.log('Calling backend callback...');
             await axios.get(`${API_URL}/api/core/auth/callback`, {
               params: {
                 access_token: accessToken,
@@ -57,22 +77,12 @@ export const AuthCallbackPage: React.FC = () => {
           setError(err.response?.data?.detail || 'Failed to complete authentication');
           setTimeout(() => navigate('/login'), 3000);
         }
-      } else {
-        // Show what parameters we actually received
-        const hashEntries = Array.from(hashParams.entries());
-        const searchEntries = Array.from(searchParams.entries());
-        console.error('Missing tokens - hashParams:', hashEntries, 'searchParams:', searchEntries);
-
-        // Check if we got an OAuth code instead (authorization code flow)
-        const code = searchParams.get('code');
-        if (code) {
-          console.log('Received OAuth code:', code.substring(0, 20));
-          setError('OAuth code flow detected but not yet implemented. Code: ' + code.substring(0, 20));
-        } else {
-          setError('Missing authentication tokens. Received params: ' + JSON.stringify(Object.fromEntries(searchEntries)));
-        }
-        setTimeout(() => navigate('/login'), 5000);
+        return;
       }
+
+      // No valid parameters found
+      setError('Missing authentication parameters');
+      setTimeout(() => navigate('/login'), 3000);
     };
 
     handleCallback();
