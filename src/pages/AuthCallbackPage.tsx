@@ -11,15 +11,27 @@ export const AuthCallbackPage: React.FC = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Debug: Log the full URL
+      console.log('Full URL:', window.location.href);
+      console.log('Hash:', window.location.hash);
+      console.log('Search:', window.location.search);
+
       // Parse tokens from URL hash (Supabase sends them after #, not ?)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      const errorParam = hashParams.get('error');
-      const type = hashParams.get('type');
+
+      // Also check query params as fallback
+      const searchParams = new URLSearchParams(window.location.search);
+
+      const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+      const errorParam = hashParams.get('error') || searchParams.get('error');
+      const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
+      const type = hashParams.get('type') || searchParams.get('type');
+
+      console.log('Parsed tokens:', { accessToken: accessToken?.substring(0, 20), refreshToken: refreshToken?.substring(0, 20), type });
 
       if (errorParam) {
-        setError('Authentication failed: ' + errorParam);
+        setError(`Authentication failed: ${errorParam}${errorDescription ? ' - ' + errorDescription : ''}`);
         setTimeout(() => navigate('/login'), 3000);
         return;
       }
@@ -28,6 +40,7 @@ export const AuthCallbackPage: React.FC = () => {
         try {
           // For OAuth (type="signup"), call backend to create/update profile
           if (type === 'signup') {
+            console.log('Calling backend callback...');
             await axios.get(`${API_URL}/api/core/auth/callback`, {
               params: {
                 access_token: accessToken,
@@ -40,10 +53,12 @@ export const AuthCallbackPage: React.FC = () => {
           tokenStorage.setTokens(accessToken, refreshToken);
           navigate('/dashboard');
         } catch (err: any) {
+          console.error('OAuth callback error:', err);
           setError(err.response?.data?.detail || 'Failed to complete authentication');
           setTimeout(() => navigate('/login'), 3000);
         }
       } else {
+        console.error('Missing tokens - hashParams:', Array.from(hashParams.entries()), 'searchParams:', Array.from(searchParams.entries()));
         setError('Missing authentication tokens');
         setTimeout(() => navigate('/login'), 3000);
       }
