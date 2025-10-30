@@ -61,19 +61,17 @@ export const AuthCallbackPage: React.FC = () => {
       // Check for direct tokens (implicit flow or email confirmation)
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
-      const type = hashParams.get('type');
 
       if (accessToken && refreshToken) {
         try {
-          // For OAuth implicit flow, call backend to create/update profile
-          if (type === 'signup') {
-            await axios.get(`${API_URL}/api/core/auth/callback`, {
-              params: {
-                access_token: accessToken,
-                refresh_token: refreshToken
-              }
-            });
-          }
+          // Always call backend to create/update profile for any OAuth or authentication flow
+          // This ensures user profiles are created for Google OAuth and other auth methods
+          await axios.get(`${API_URL}/api/core/auth/callback`, {
+            params: {
+              access_token: accessToken,
+              refresh_token: refreshToken
+            }
+          });
 
           // Store tokens and navigate
           tokenStorage.setTokens(accessToken, refreshToken);
